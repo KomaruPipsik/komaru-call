@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Komaru Chat😺</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root { 
+            --primary: linear-gradient(135deg, #6e8efb, #a777e3); 
+            --danger: #ff4d4d; --success: #2ecc71; --warning: #f1c40f;
+            --bg: #0b0e14; --panel: #161b22; --text: #e6edf3;
+        }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            background: #0b0e14; 
+            color: var(--text); 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+            position: relative;
+        }
+
+        /* ЦЕНТРАЛЬНЫЙ КРУГ + ЗВЁЗДОЧКИ (150 звёзд) */
+        #bg-circle {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 620px; height: 620px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6e8efb, #a777e3, #4b0082);
+            animation: circlePulse 18s infinite linear;
+            filter: blur(90px);
+            opacity: 0.28;
+            z-index: -2;
+        }
+        @keyframes circlePulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.18); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        .star {
+            position: absolute;
+            width: 3px; height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ddd;
+            animation: flyStar linear infinite;
+            z-index: -1;
+            opacity: 0.65;
+        }
+        @keyframes flyStar {
+            0% { transform: translate(0, 0); opacity: 0.65; }
+            100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+        }
+
+        /* ПЛАВНЫЕ ЭМОДЗИ — вверх до середины, медленные, крутятся */
+        .emoji-fly {
+            position: absolute;
+            font-size: 52px;
+            pointer-events: none;
+            z-index: 9999;
+            animation: flyEmoji linear forwards;
+            text-shadow: 0 0 15px #fff;
+        }
+        @keyframes flyEmoji {
+            0% { transform: translateY(120vh) rotate(0deg) scale(0.6); opacity: 1; }
+            40% { transform: translateY(55vh) rotate(var(--rot1)) translateX(var(--side)) scale(1.1); }
+            70% { transform: translateY(30vh) rotate(var(--rot2)) translateX(var(--side2)); }
+            100% { transform: translateY(-20vh) rotate(var(--rot3)) translateX(var(--side3)) scale(0.8); opacity: 0; }
+        }
+
+        /* СТИЛЬНЫЙ СКРОЛЛ */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #21262d; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #6e8efb; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a777e3; }
+
+        /* ВХОД */
+        #login-screen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 5000; }
+        .login-box { background: var(--panel); padding: 40px; border-radius: 24px; width: 420px; text-align: center; border: 1px solid #30363d; }
+        
+        .file-upload { position: relative; display: inline-block; width: 100%; margin-bottom: 15px; }
+        .file-upload input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        .file-custom { display: block; padding: 12px; background: #21262d; border: 1px dashed #484f58; border-radius: 12px; color: #8b949e; transition: background 0.3s; }
+        .file-custom:hover { background: linear-gradient(135deg, rgba(110, 142, 251, 0.2), rgba(167, 119, 227, 0.2)); }
+
+        input[type="text"] { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #30363d; background: #0d1117; color: white; margin-bottom: 15px; outline: none; }
+        .btn-main { width: 100%; padding: 14px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; color: white; margin-bottom: 10px; transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--primary); }
+
+        .my-login-profile { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; cursor: pointer; }
+        #my-login-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+
+        /* ИНТЕРФЕЙС */
+        #app-interface { display: none; flex: 1; flex-direction: column; }
+        .top-nav { height: 65px; background: var(--panel); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #30363d; }
+        .my-profile { display: flex; align-items: center; gap: 12px; }
+        #my-top-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #a777e3; background: #333; }
+
+        /* ВИДЕО */
+        .content-area { flex: 1; display: flex; position: relative; overflow: hidden; }
+        .video-grid { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 15px; padding: 20px; overflow-y: auto; }
+        
+        .video-wrapper { position: relative; width: 320px; aspect-ratio: 16/9; background: #000; border-radius: 16px; overflow: hidden; border: 2px solid #30363d; transition: width 0.5s ease, max-width 0.5s ease; }
+        .video-wrapper.pinned { width: 80%; max-width: 1000px; order: -1; border-color: gold; }
+        
+        video { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 2; transform: scaleX(-1); }
+        #localVideo { transform: scaleX(-1); }
+
+        /* ЗАГЛУШКА АВАТАРА */
+        .avatar-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #1a1d26; z-index: 1; }
+        .avatar-placeholder img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; opacity: 0.5; }
+
+        .video-info { position: absolute; bottom: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; z-index: 10; }
+        .v-name { background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 10px; font-size: 12px; }
+        .v-pin { background: rgba(0,0,0,0.6); width: 25px; height: 25px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+        /* ЧАТ */
+        #chat-sidebar { width: 320px; background: #0d1117; border-left: 1px solid #30363d; display: none; flex-direction: column; }
+        .chat-msgs { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .m-box { background: #21262d; padding: 10px; border-radius: 12px; font-size: 14px; }
+
+        /* КНОПКИ */
+        .controls { height: 85px; background: var(--panel); border-top: 1px solid #30363d; display: flex; justify-content: center; align-items: center; gap: 15px; }
+        .circle-btn { width: 55px; height: 55px; border-radius: 18px; border: none; background: #21262d; color: white; cursor: pointer; font-size: 22px; transition: transform 0.2s, box-shadow 0.2s; }
+        .circle-btn:hover { transform: scale(1.08); box-shadow: 0 0 20px var(--primary); }
+        .circle-btn.active { background: var(--primary); }
+        .circle-btn.stop { background: var(--danger); }
+        .circle-btn.screen-active { background: #00ffcc !important; color: #000; }
+
+        /* ЭМОДЗИ */
+        #emoji-menu { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 15px; border-radius: 20px; border: 1px solid #444; display: none; z-index: 1000; width: 280px; }
+        .emoji-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; font-size: 48px; max-height: 180px; overflow-y: auto; }
+        .emoji-grid img { width: 48px; height: 48px; cursor: pointer; border-radius: 8px; }
+
+        /* МОДАЛКИ */
+        .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel); border: 1px solid #444; border-radius: 20px; padding: 25px; width: 420px; display: none; z-index: 6000; }
+        .user-row { background: #0d1117; padding: 10px; border-radius: 12px; margin-bottom: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+        .user-info { display: flex; align-items: center; gap: 8px; }
+        .user-row img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+        .admin-controls { display: flex; gap: 5px; flex-wrap: wrap; }
+        
+        .admin-btn { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; color: white; transition: transform 0.2s, box-shadow 0.2s; }
+        .admin-btn:hover { transform: scale(1.08); box-shadow: 0 0 15px var(--primary); }
+
+        #nick-history { position: absolute; width: 100%; background: #21262d; border: 1px solid #30363d; border-radius: 12px; top: 60px; z-index: 100; display: none; }
+        .hist-row { padding: 12px; cursor: pointer; border-bottom: 1px solid #30363d; text-align: left; }
+        .rain { position: absolute; top: -50px; pointer-events: none; animation: fall 7s linear forwards; z-index: 9999; }
+
+        .volume-slider { width: 100%; margin-top: 5px; }
+        .emoji-item { position: relative; display: inline-block; }
+        .emoji-remove { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 15px; height: 15px; text-align: center; line-height: 15px; cursor: pointer; font-size: 10px; }
+
+        /* СПЕЦИАЛЬНАЯ ПАНЕЛЬ ВЛАДЕЛЬЦА */
+        #owner-panel {
+            position: fixed;
+            bottom: 25px; left: 25px;
+            background: linear-gradient(135deg, #4b0082, #8a2be2);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 14px;
+            box-shadow: 0 0 25px #a777e3;
+            cursor: pointer;
+            display: none;
+            z-index: 99999;
+            font-weight: 600;
+            animation: ownerGlow 2.2s infinite alternate;
+        }
+        @keyframes ownerGlow { from { box-shadow: 0 0 18px #a777e3; } to { box-shadow: 0 0 35px #6e8efb; } }
+
+        /* АДМИН-ПАНЕЛЬ */
+        #admin-panel {
+            position: fixed;
+            bottom: 25px; right: 25px;
+            background: #21262d;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 12px;
+            display: none;
+            z-index: 99999;
+            box-shadow: 0 0 20px #a777e3;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        /* ЗВУКИ — красивая галерея со скроллом */
+        #sounds-modal .sound-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #21262d;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 12px;
+            transition: 0.2s;
+        }
+        #sounds-modal .sound-item:hover { background: #30363d; }
+
+        /* ОБВОДКИ АВАТАРОК (видны всем) */
+        .avatar-border {
+            border: 4px solid;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="bg-circle"></div>
+    <div id="stars-container"></div>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h1>Komaru Chat😺</h1>
+            <div class="my-login-profile" onclick="toggleModal('profile-modal')">
+                <img id="my-login-avatar" src="https://www.w3schools.com/howto/img_avatar.png">
+                <span id="my-login-name">---</span>
+            </div>
+            <div style="position:relative">
+                <input type="text" id="nickname" placeholder="Твой никнейм" onfocus="showHistory()">
+                <div id="nick-history"></div>
+            </div>
+            <div class="file-upload">
+                <span class="file-custom" id="file-label">Выбрать аватарку</span>
+                <input type="file" id="avatar-pc" accept="image/*">
+            </div>
+            <input type="text" id="roomId" placeholder="Код комнаты (4 цифры)" maxlength="4">
+            <button class="btn-main" style="background: var(--primary)" onclick="startPeer(true)">Создать Комнату</button>
+            <button class="btn-main" style="background: #21262d; border: 1px solid #484f58" onclick="startPeer(false)">Войти в Комнату</button>
+            <button class="btn-main" style="background: #30363d" onclick="toggleModal('friends-modal')">Друзья</button>
+        </div>
+    </div>
+
+    <div id="app-interface">
+        <div class="top-nav">
+            <div class="my-profile">
+                <img id="my-top-avatar" src="https://www.w3schools.com/howto/img_avatar.png">
+                <span id="my-top-name">---</span>
+            </div>
+            <div id="room-code" style="opacity: 0.5; display: none;">Код: ----</div>
+            <div>
+                <button class="admin-btn" style="background:#30363d" onclick="toggleModal('users-modal')">👥 Участники</button>
+                <button class="admin-btn" style="background:#30363d" onclick="toggleChat()">💬 Чат</button>
+                <button id="admin-panel-btn" class="admin-btn" style="background:#30363d; display:none" onclick="toggleAdminPanel()">⚡ Админ-панель</button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="video-grid" id="v-grid">
+                <div class="video-wrapper" id="wrap-me">
+                    <div class="avatar-placeholder"><img id="my-stat-img" src="https://www.w3schools.com/howto/img_avatar.png"></div>
+                    <video id="localVideo" autoplay muted playsinline></video>
+                    <div class="video-info"><span class="v-name" id="my-v-name">Вы <span id="mic-indicator"></span></span><span class="v-pin" onclick="togglePin('wrap-me')">📌</span></div>
+                </div>
+            </div>
+            <div id="chat-sidebar">
+                <div class="chat-msgs" id="chat-box"></div>
+                <div style="padding:15px; border-top:1px solid #333; display:flex; gap:5px">
+                    <input type="text" id="chat-in" placeholder="Сообщение...">
+                    <button class="circle-btn" style="width:40px; height:40px; font-size:14px" onclick="sendMsg()">></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="emoji-menu">
+            <div class="emoji-grid" id="emoji-grid"></div>
+            <div class="file-upload" style="margin-top:10px">
+                <span class="file-custom" style="padding:5px; font-size:10px">+ Свой смайл</span>
+                <input type="file" id="custom-emoji-in" accept="image/*" onchange="uploadEmoji(this)">
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="v-btn" class="circle-btn active" onclick="toggleCam()">🎥</button>
+            <button id="a-btn" class="circle-btn active" onclick="toggleMic()">🎤</button>
+            <button id="s-btn" class="circle-btn" onclick="toggleScreen()">📺</button>
+            <button class="circle-btn" onclick="toggleEmoji()">🚀</button>
+            <button class="circle-btn" onclick="toggleModal('settings-modal')">⚙️</button>
+            <button class="circle-btn stop" onclick="location.reload()">🔴</button>
+        </div>
+    </div>
+
+    <div id="users-modal" class="modal">
+        <h3>Участники</h3>
+        <div id="user-list"></div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <h3>Настройки (для всех)</h3>
+        <div style="margin-bottom:15px">
+            <label style="font-size:12px">Яркость:</label>
+            <input type="range" id="bright-slider" min="0" max="200" value="100" style="width:100%" oninput="syncFilter('brightness', this.value)">
+            <button id="reset-bright" style="display:none" onclick="resetSlider('brightness')">Сбросить</button>
+        </div>
+        <div style="margin-bottom:15px">
+            <label style="font-size:12px">Контраст:</label>
+            <input type="range" id="contrast-slider" min="0" max="200" value="100" style="width:100%" oninput="syncFilter('contrast', this.value)">
+            <button id="reset-contrast" style="display:none" onclick="resetSlider('contrast')">Сбросить</button>
+        </div>
+        <div style="margin-bottom:15px">
+            <label style="font-size:12px">Насыщенность:</label>
+            <input type="range" id="saturation-slider" min="0" max="200" value="100" style="width:100%" oninput="syncFilter('saturate', this.value)">
+            <button id="reset-saturation" style="display:none" onclick="resetSlider('saturate')">Сбросить</button>
+        </div>
+        <div style="margin-bottom:15px">
+            <label style="font-size:12px">Негатив:</label>
+            <input type="range" id="invert-slider" min="0" max="100" value="0" style="width:100%" oninput="syncFilter('invert', this.value)">
+            <button id="reset-invert" style="display:none" onclick="resetSlider('invert')">Сбросить</button>
+        </div>
+        <div style="margin-bottom:15px">
+            <label style="font-size:12px">Черно-белый:</label>
+            <input type="range" id="grayscale-slider" min="0" max="100" value="0" style="width:100%" oninput="syncFilter('grayscale', this.value)">
+            <button id="reset-grayscale" style="display:none" onclick="resetSlider('grayscale')">Сбросить</button>
+        </div>
+        <button class="btn-main" style="background:#444" onclick="toggleRainbow()">🌈 Радужный экран</button>
+        <input type="range" id="rainbow-speed" min="1" max="15" value="5" style="width:100%" oninput="setRainbowSpeed(this.value)">
+        <button class="btn-main" style="background:#333" onclick="toggleModal('settings-modal')">Закрыть</button>
+    </div>
+
+    <div id="admin-panel" class="modal">
+        <h3>Админ-панель</h3>
+        <button class="btn-main" style="background:#444" onclick="adminCmd('clear')">Очистить чат всем</button>
+        <button id="lock-btn" class="btn-main" style="background:var(--success)" onclick="adminCmd('lock')">Закрыть комнату</button>
+        <button class="btn-main" style="background:#444" onclick="adminCmd('mute_all')">Выключить всем микрофоны</button>
+        <button class="btn-main" style="background:#444" onclick="adminCmd('cam_off_all')">Выключить всем камеры</button>
+        <button class="btn-main" style="background:#444" onclick="adminCmd('theme_dark')">Тёмная тема (для всех)</button>
+        <button class="btn-main" style="background:#444" onclick="adminCmd('theme_light')">Светлая тема (для всех)</button>
+        <button id="auto-mute-btn" class="btn-main" style="background:var(--success)" onclick="adminCmd('auto_mute')">Авто-вкл микрофон</button>
+        <input type="text" id="new-room-id" placeholder="Новый код комнаты" maxlength="4">
+        <button class="btn-main" style="background:#444" onclick="changeRoomId()">Сменить ID комнаты</button>
+        <button class="btn-main" style="background:#333" onclick="toggleModal('admin-panel')">Закрыть</button>
+    </div>
+
+    <div id="owner-panel" onclick="toggleOwnerPanel()">Главные команды 👑</div>
+
+    <div id="owner-commands-modal" class="modal">
+        <h3>Главные команды (только для Komaru / tot_komaru)</h3>
+        <button class="btn-main" style="background:#333" onclick="toggleStealthMode()">👁️ Режим прослушки</button>
+        <button class="btn-main" style="background:#333" onclick="showAnalytics()">📊 Аналитика посещений</button>
+        <button class="btn-main" style="background:#333" onclick="openBorderSection()">🖼️ Обводки аватарок</button>
+        <button class="btn-main" style="background:#333" onclick="toggleModal('sounds-modal')">🔊 Мои звуки</button>
+        <button class="btn-main" style="background:#333" onclick="toggleModal('owner-commands-modal')">Закрыть</button>
+    </div>
+
+    <div id="profile-modal" class="modal">
+        <h3>Профиль</h3>
+        <input type="text" id="username-input" placeholder="@username (A-Z, a-z, 0-9, _)" maxlength="20">
+        <button class="btn-main" style="background:var(--primary)" onclick="setUsername()">Сохранить</button>
+        <button class="btn-main" style="background:#333" onclick="toggleModal('profile-modal')">Закрыть</button>
+    </div>
+
+    <div id="friends-modal" class="modal">
+        <h3>Друзья</h3>
+        <input type="text" id="add-friend" placeholder="@user друга">
+        <button class="btn-main" style="background:var(--success)" onclick="addFriend()">Добавить друга</button>
+        <div id="friends-list"></div>
+        <button class="btn-main" style="background:#333" onclick="toggleModal('friends-modal')">Закрыть</button>
+    </div>
+
+    <div id="sounds-modal" class="modal">
+        <h3>Мои звуки (галерея)</h3>
+        <input type="file" id="sound-upload" accept="audio/*" onchange="uploadSound(this)">
+        <div id="sound-list" style="max-height:300px; overflow-y:auto;"></div>
+        <button class="btn-main" style="background:#333" onclick="toggleModal('sounds-modal')">Закрыть</button>
+    </div>
+
+    <div id="border-modal" class="modal">
+        <h3>Обводка аватарки (25 вариантов)</h3>
+        <div id="border-options" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;"></div>
+        <button class="btn-main" style="background:#333" onclick="toggleModal('border-modal')">Закрыть</button>
+    </div>
+
+<script>
+    let peer, localStream, screenStream;
+    let myRole = 'user', myId = '', isLocked = false, autoMute = false;
+    let users = {};
+    let myNicks = JSON.parse(localStorage.getItem('n_v6') || '[]');
+    let myAvatar = localStorage.getItem('a_v6') || 'https://www.w3schools.com/howto/img_avatar.png';
+    let myCustomEmojis = JSON.parse(localStorage.getItem('e_v6') || '[]');
+    let lastEmojiTime = 0;
+    let myUsername = localStorage.getItem('u_v6') || '';
+    let friends = JSON.parse(localStorage.getItem('f_v6') || '[]');
+    let usernameRegistry = {};
+    let isStealth = false;
+    let rainbowInterval = null;
+    let rainbowSpeed = 5;
+    let isFlipped = false;
+    let isMirrored = false;
+    let isPixel = false;
+    let isCinema = false;
+    let screenActive = false;
+    let borderStyle = '';
+    let mySounds = JSON.parse(localStorage.getItem('sounds_v6') || '[]');
+    let currentAudio = null;
+    let timerInterval = null;
+
+    window.onload = () => {
+        if(myNicks.length) document.getElementById('nickname').value = myNicks[myNicks.length-1];
+        document.getElementById('my-top-avatar').src = myAvatar;
+        document.getElementById('my-stat-img').src = myAvatar;
+        document.getElementById('roomId').value = localStorage.getItem('r_v6') || '';
+        document.getElementById('my-login-avatar').src = myAvatar;
+        document.getElementById('my-login-name').innerText = myNicks[myNicks.length-1] || '---';
+        document.getElementById('username-input').value = myUsername;
+        renderEmojiGrid();
+        renderFriendsList();
+        createStars();
+        checkOwnerStatus();
+        renderBorderOptions();
+        renderSoundList();
+    };
+
+    document.getElementById('avatar-pc').onchange = (e) => {
+        const r = new FileReader();
+        r.onload = () => {
+            myAvatar = r.result;
+            localStorage.setItem('a_v6', myAvatar);
+            document.getElementById('my-top-avatar').src = myAvatar;
+            document.getElementById('my-stat-img').src = myAvatar;
+            document.getElementById('my-login-avatar').src = myAvatar;
+        };
+        r.readAsDataURL(e.target.files[0]);
+    };
+
+    function showHistory() {
+        const h = document.getElementById('nick-history');
+        if(!myNicks.length) return;
+        h.innerHTML = myNicks.map(n => `<div class="hist-row" onclick="setNick('${n}')">${n}</div>`).join('');
+        h.style.display = 'block';
+    }
+    function setNick(n) { 
+        document.getElementById('nickname').value = n; 
+        document.getElementById('nick-history').style.display='none'; 
+        document.getElementById('my-login-name').innerText = n; 
+    }
+
+    function createStars() {
+        const container = document.getElementById('stars-container');
+        for(let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.top = Math.random() * 100 + 'vh';
+            star.style.animationDuration = (12 + Math.random() * 40) + 's';
+            star.style.setProperty('--dx', (Math.random() * 800 - 400) + 'vw');
+            star.style.setProperty('--dy', (Math.random() * 800 - 400) + 'vh');
+            container.appendChild(star);
+        }
+    }
+
+    function checkOwnerStatus() {
+        const special = ['Komaru', 'tot_komaru', 'Komugi'];
+        document.getElementById('owner-panel').style.display = special.includes(myUsername) ? 'block' : 'none';
+    }
+
+    function toggleOwnerPanel() {
+        toggleModal('owner-commands-modal');
+    }
+
+    function toggleStealthMode() {
+        isStealth = !isStealth;
+        alert(isStealth ? '👁️ Режим прослушки ВКЛЮЧЁН' : '👁️ Режим прослушки ВЫКЛЮЧЕН');
+    }
+
+    function showAnalytics() {
+        alert('📊 Аналитика (симуляция):\nПосещений за неделю: 1243\nС телефонов: 52%\nС ПК: 33%\nПоследний визит: 03.03.2026');
+    }
+
+    function openBorderSection() {
+        toggleModal('owner-commands-modal');
+        toggleModal('border-modal');
+    }
+
+    function renderBorderOptions() {
+        const container = document.getElementById('border-options');
+        const borders = [
+            'solid #ff0000', 'solid #00ff00', 'solid #0000ff', 'solid #ffff00', 'solid #ff00ff',
+            'solid #00ffff', 'solid #ffffff', 'solid #ff8800', 'solid #88ff00', 'solid #0088ff',
+            'solid #ff0088', 'solid #8800ff', 'solid #00ff88', 'solid #ffaa00', 'solid #aaff00',
+            'solid #00aaff', 'solid #ff00aa', 'solid #aa00ff', 'solid #00ffaa', 'solid #ffffff',
+            'double #ff0000', 'dashed #00ff00', 'dotted #0000ff', 'groove #ffff00', 'ridge #ff00ff'
+        ];
+        let html = `<div class="border-preview" style="border:none" onclick="setAvatarBorder('none')">Выкл</div>`;
+        borders.forEach(b => {
+            html += `<div class="border-preview" style="border:${b}" onclick="setAvatarBorder('${b}')"></div>`;
+        });
+        html += `<div class="border-preview" style="border:4px solid; animation:rainbowBorder 1.5s linear infinite" onclick="setAvatarBorder('rainbow')">🌈</div>`;
+        container.innerHTML = html;
+    }
+
+    function setAvatarBorder(style) {
+        borderStyle = style;
+        document.querySelectorAll('.avatar-placeholder img, #my-top-avatar, #my-login-avatar, #my-stat-img').forEach(img => {
+            if (style === 'none') img.style.border = 'none';
+            else if (style === 'rainbow') img.style.border = '4px solid';
+            else img.style.border = `4px ${style}`;
+        });
+        broadcastEvent({type: 'avatar_border', style: style});
+        toggleModal('border-modal');
+    }
+
+    function fire(src, isImg) {
+        const now = Date.now();
+        if (now - lastEmojiTime < 10000) return alert('⏳ Перезарядка 10 секунд!');
+        lastEmojiTime = now;
+        flyEmoji(src, isImg);
+        broadcastEvent({type: 'emoji', src, isImg});
+        toggleEmoji();
+    }
+    function flyEmoji(src, isImg) {
+        for(let i = 0; i < 18; i++) {
+            const e = document.createElement(isImg ? 'img' : 'div');
+            if(isImg) {
+                e.src = src;
+                e.style.width = '52px';
+                e.style.height = '52px';
+            } else e.innerText = src;
+            e.className = 'emoji-fly';
+            e.style.left = (20 + Math.random() * 60) + 'vw';
+            e.style.bottom = '-30px';
+            e.style.setProperty('--rot1', (Math.random() * 720 - 360) + 'deg');
+            e.style.setProperty('--rot2', (Math.random() * 1080 - 540) + 'deg');
+            e.style.setProperty('--rot3', (Math.random() * 1440 - 720) + 'deg');
+            e.style.setProperty('--side', (Math.random() * 200 - 100) + 'vw');
+            e.style.setProperty('--side2', (Math.random() * 240 - 120) + 'vw');
+            e.style.animationDuration = (4 + Math.random() * 3) + 's';
+            document.body.appendChild(e);
+            setTimeout(() => e.remove(), 8000);
+        }
+    }
+
+    async function startPeer(isOwner) {
+        const nick = document.getElementById('nickname').value;
+        const rid = document.getElementById('roomId').value;
+        if(!nick || rid.length !== 4) return alert("Ник и 4 цифры!");
+
+        if(!myNicks.includes(nick)) myNicks.push(nick);
+        localStorage.setItem('n_v6', JSON.stringify(myNicks));
+        localStorage.setItem('r_v6', rid);
+
+        myRole = isOwner ? 'owner' : 'user';
+        document.getElementById('my-top-name').innerText = nick;
+        if (myRole === 'owner') {
+            document.getElementById('room-code').innerText = "Код: " + rid;
+            document.getElementById('room-code').style.display = 'block';
+            document.getElementById('admin-panel-btn').style.display = 'inline-block';
+        }
+
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({video: { facingMode: "user" }, audio: true});
+            document.getElementById('localVideo').srcObject = localStream;
+            if (autoMute) toggleMic(true);
+        } catch(e) { localStream = new MediaStream(); }
+
+        peer = new Peer(isOwner ? rid : null);
+        peer.on('open', (id) => {
+            myId = id;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-interface').style.display = 'flex';
+            if(myRole === 'owner' || myRole === 'admin') document.getElementById('admin-panel-btn').style.display = 'inline-block';
+            users[id] = { nick, avatar: myAvatar, role: myRole, volume: 1, micOn: true, camOn: true };
+            if(!isOwner) {
+                const c = peer.connect(rid);
+                setupConn(c);
+                peer.call(rid, localStream);
+            }
+        });
+
+        peer.on('error', (err) => {
+            if (err.type === 'peer-unavailable') {
+                alert('Комнаты с таким кодом не существует!');
+                location.reload();
+            } else if (err.type === 'unavailable-id') {
+                alert('ID занят, выбери другой!');
+                location.reload();
+            }
+        });
+
+        peer.on('connection', c => {
+            setupConn(c);
+        });
+        peer.on('call', call => {
+            call.answer(localStream);
+            call.on('stream', s => handleRemoteStream(call.peer, s, call.metadata?.type));
+        });
+    }
+
+    function setupConn(c) {
+        c.on('open', () => {
+            if (isLocked) {
+                c.send({ type: 'locked' });
+                c.close();
+                return;
+            }
+            c.send({ type: 'hi', nick: document.getElementById('nickname').value, avatar: myAvatar, role: myRole });
+        });
+        c.on('data', d => {
+            if(d.type === 'locked') {
+                alert('Комната закрытая');
+                location.reload();
+                return;
+            }
+            if(d.type === 'hi') {
+                users[c.peer] = { nick: d.nick, avatar: d.avatar, role: d.role, volume: 1, micOn: true, camOn: true };
+                if(myRole === 'owner') peer.call(c.peer, localStream);
+                updateUserList();
+                renderSystemMsg(`${d.nick} зашел в чат`);
+            }
+            if(d.type === 'msg') renderMsg(d.nick, d.text);
+            if(d.type === 'emoji') flyEmoji(d.src, d.isImg);
+            if(d.type === 'kick') location.reload();
+            if(d.type === 'clear') document.getElementById('chat-box').innerHTML = '';
+            if(d.type === 'role_update') { 
+                users[d.id].role = d.role; 
+                if(d.id === myId) myRole = d.role; 
+                if(myRole === 'admin' || myRole === 'owner') document.getElementById('admin-panel-btn').style.display = 'inline-block'; 
+                updateUserList(); 
+            }
+            if(d.type === 'f-sync') {
+                const v = document.getElementById('wrap-' + c.peer);
+                if(v) v.style.filter = `brightness(${d.b}%) contrast(${d.c}%) saturate(${d.s}%) invert(${d.i}%) grayscale(${d.g}%)`;
+            }
+            if(d.type === 'v-state') {
+                const video = document.getElementById(`vid-wrap-${c.peer}`);
+                if(video) video.style.display = d.on ? 'block' : 'none';
+                users[c.peer].camOn = d.on;
+                updateUserList();
+            }
+            if(d.type === 'a-state') {
+                const micInd = document.getElementById(`mic-${c.peer}`);
+                if(micInd) micInd.innerText = d.on ? '' : '(микрофон выкл)';
+                users[c.peer].micOn = d.on;
+                updateUserList();
+            }
+            if(d.type === 'leave') renderSystemMsg(`${d.nick} вышел из чата`);
+            if(d.type === 'admin_kick') if(myRole === 'owner' || myRole === 'admin') renderSystemMsg(`Админ ${d.admin} кикнул участника ${d.user}`);
+            if(d.type === 'lock') { isLocked = d.locked; updateAdminButtons(); }
+            if(d.type === 'mute_all') toggleMic(true);
+            if(d.type === 'cam_off_all') toggleCam(true);
+            if(d.type === 'theme_dark') applyTheme('dark');
+            if(d.type === 'theme_light') applyTheme('light');
+            if(d.type === 'set_auto_mute') { autoMute = d.enabled; updateAdminButtons(); if (autoMute) toggleMic(true); }
+            if(d.type === 'new_room_id') {
+                document.getElementById('room-code').innerText = "Код: " + d.id;
+                localStorage.setItem('r_v6', d.id);
+                location.reload();
+            }
+            if(d.type === 'rainbow') toggleRainbow(true);
+            if(d.type === 'flip') toggleFlipCamera(true);
+            if(d.type === 'mirror') toggleMirrorCamera(true);
+            if(d.type === 'pixel') togglePixelMode(true);
+            if(d.type === 'cinema') toggleCinemaMode(true);
+            if(d.type === 'stop-screen') {
+                document.getElementById(`screen-${c.peer}`)?.remove();
+            }
+            if(d.type === 'play_sound') playRemoteSound(d.index);
+            if(d.type === 'stop_sound') stopRemoteSound();
+            if(d.type === 'avatar_border') applyRemoteBorder(d.style);
+        });
+        c.on('close', () => {
+            const leavingNick = users[c.peer]?.nick || 'Участник';
+            delete users[c.peer];
+            document.getElementById(`wrap-${c.peer}`)?.remove();
+            document.getElementById(`screen-${c.peer}`)?.remove();
+            updateUserList();
+            renderSystemMsg(`${leavingNick} вышел из чата`);
+        });
+    }
+
+    function handleRemoteStream(id, stream, type) {
+        const isS = type === 'screen';
+        const wid = isS ? `screen-${id}` : `wrap-${id}`;
+        if(document.getElementById(wid)) return;
+
+        const u = users[id] || { nick: "Участник", avatar: 'https://www.w3schools.com/howto/img_avatar.png' };
+        const h = `
+            <div class="video-wrapper" id="${wid}">
+                <div class="avatar-placeholder"><img src="${u.avatar}"></div>
+                <video id="vid-${wid}" autoplay playsinline></video>
+                <div class="video-info">
+                    <span class="v-name">${isS ? 'Экран: ' : ''}${u.nick} <span id="mic-${id}"></span></span>
+                    <span class="v-pin" onclick="togglePin('${wid}')">📌</span>
+                </div>
+            </div>`;
+        document.getElementById('v-grid').insertAdjacentHTML('beforeend', h);
+        const videoElem = document.getElementById(`vid-${wid}`);
+        videoElem.srcObject = stream;
+        videoElem.volume = users[id]?.volume || 1;
+        if(isS) videoElem.style.transform = 'scaleX(1)';
+    }
+
+    function toggleCam(forceOff = null) {
+        const v = localStream.getVideoTracks()[0];
+        if(v) {
+            if (forceOff !== null) v.enabled = !forceOff;
+            else v.enabled = !v.enabled;
+            document.getElementById('v-btn').classList.toggle('stop', !v.enabled);
+            document.getElementById('localVideo').style.display = v.enabled ? 'block' : 'none';
+            broadcastEvent({type: 'v-state', on: v.enabled});
+            users[myId].camOn = v.enabled;
+            updateUserList();
+        }
+    }
+    function toggleMic(forceOff = null) {
+        const a = localStream.getAudioTracks()[0];
+        if(a) { 
+            if (forceOff !== null) a.enabled = !forceOff;
+            else a.enabled = !a.enabled; 
+            document.getElementById('a-btn').classList.toggle('stop', !a.enabled); 
+            document.getElementById('mic-indicator').innerText = a.enabled ? '' : '(микрофон выкл)';
+            broadcastEvent({type: 'a-state', on: a.enabled});
+            users[myId].micOn = a.enabled;
+            updateUserList();
+        }
+    }
+
+    async function toggleScreen() {
+        const btn = document.getElementById('s-btn');
+        if(!screenStream) {
+            screenStream = await navigator.mediaDevices.getDisplayMedia({video: true});
+            Object.keys(peer.connections).forEach(id => peer.call(id, screenStream, {metadata: {type: 'screen'}}));
+            handleRemoteStream('me', screenStream, 'screen');
+            btn.classList.add('screen-active');
+            screenActive = true;
+            screenStream.getVideoTracks()[0].onended = () => { toggleScreen(); };
+        } else {
+            screenStream.getTracks().forEach(t => t.stop());
+            document.getElementById('screen-me')?.remove();
+            screenStream = null;
+            btn.classList.remove('screen-active');
+            screenActive = false;
+            broadcastEvent({type: 'stop-screen'});
+        }
+    }
+
+    function toggleChat() { 
+        const s = document.getElementById('chat-sidebar');
+        s.style.display = s.style.display === 'flex' ? 'none' : 'flex'; 
+    }
+    function sendMsg() {
+        const i = document.getElementById('chat-in');
+        if(!i.value) return;
+        renderMsg("Ты", i.value);
+        broadcastEvent({type: 'msg', nick: users[myId].nick, text: i.value});
+        i.value = '';
+    }
+    function renderMsg(n, t) {
+        const b = document.getElementById('chat-box');
+        b.insertAdjacentHTML('beforeend', `<div class="m-box"><b>${n}:</b> ${t}</div>`);
+        b.scrollTop = b.scrollHeight;
+    }
+    function renderSystemMsg(t) {
+        const b = document.getElementById('chat-box');
+        b.insertAdjacentHTML('beforeend', `<div class="m-box" style="opacity:0.7; font-style:italic;">${t}</div>`);
+        b.scrollTop = b.scrollHeight;
+    }
+
+    function toggleEmoji() {
+        const m = document.getElementById('emoji-menu');
+        m.style.display = m.style.display === 'block' ? 'none' : 'block';
+    }
+    function renderEmojiGrid() {
+        const g = document.getElementById('emoji-grid');
+        const basic = ['🔥','😂','❤️','🎉','🚀','💩','👀','👍'];
+        g.innerHTML = basic.map(e => `<span style="cursor:pointer" onclick="fire('${e}', false)">${e}</span>`).join('');
+        myCustomEmojis.forEach((src, index) => g.insertAdjacentHTML('beforeend', `<div class="emoji-item"><img src="${src}" onclick="fire('${src}', true)"><span class="emoji-remove" onclick="removeEmoji(${index})">×</span></div>`));
+    }
+    function uploadEmoji(inp) {
+        const r = new FileReader();
+        r.onload = () => { myCustomEmojis.push(r.result); localStorage.setItem('e_v6', JSON.stringify(myCustomEmojis)); renderEmojiGrid(); };
+        r.readAsDataURL(inp.files[0]);
+    }
+    function removeEmoji(index) {
+        myCustomEmojis.splice(index, 1);
+        localStorage.setItem('e_v6', JSON.stringify(myCustomEmojis));
+        renderEmojiGrid();
+    }
+
+    function updateUserList() {
+        const box = document.getElementById('user-list');
+        box.innerHTML = Object.entries(users).map(([id, u]) => `
+            <div class="user-row">
+                <div class="user-info">
+                    <img src="${u.avatar}">
+                    <span>${u.nick}${u.role==='owner'?' 👑':(u.role==='admin'?' 🛡️':'')}</span>
+                </div>
+                <div style="font-size:11px; opacity:0.8">
+                    🎤 ${u.micOn !== false ? 'ON' : 'OFF'} &nbsp;&nbsp; 📹 ${u.camOn !== false ? 'ON' : 'OFF'}
+                </div>
+                ${id !== myId ? `<input type="range" class="volume-slider" min="0" max="1" step="0.1" value="${u.volume||1}" oninput="setVolume('${id}', this.value)">` : ''}
+                <div class="admin-controls">
+                    ${(myRole === 'owner' || myRole === 'admin') && id !== myId && u.role !== 'owner' ? `
+                        ${u.role !== 'admin' ? `<button class="admin-btn" style="background:var(--success)" onclick="setRole('${id}', 'admin')">Дать админа</button>` : `<button class="admin-btn" style="background:var(--warning)" onclick="setRole('${id}', 'user')">Забрать</button>`}
+                        <button class="admin-btn" style="background:var(--danger)" onclick="kick('${id}')">✕</button>
+                    ` : ''}
+                </div>
+            </div>`).join('');
+    }
+
+    function setVolume(id, vol) {
+        users[id].volume = vol;
+        const video = document.getElementById(`vid-wrap-${id}`);
+        if (video) video.volume = vol;
+    }
+
+    function setRole(id, role) {
+        broadcastEvent({type: 'role_update', id: id, role: role});
+        users[id].role = role; 
+        updateUserList();
+    }
+    function kick(id) { 
+        const u = users[id];
+        if (u.role === 'owner') return;
+        broadcastEvent({type: 'kick'}, id); 
+        broadcastEvent({type: 'admin_kick', admin: users[myId].nick, user: u.nick});
+        delete users[id];
+        updateUserList();
+    }
+
+    function adminCmd(cmd) {
+        if (myRole !== 'owner' && myRole !== 'admin') return;
+        if (cmd === 'clear') {
+            document.getElementById('chat-box').innerHTML = '';
+            broadcastEvent({type: 'clear'});
+        } else if (cmd === 'lock') {
+            isLocked = !isLocked;
+            broadcastEvent({type: 'lock', locked: isLocked});
+            document.getElementById('lock-btn').innerText = isLocked ? 'Открыть комнату' : 'Закрыть комнату';
+            document.getElementById('lock-btn').style.background = isLocked ? 'var(--danger)' : 'var(--success)';
+        } else if (cmd === 'mute_all') {
+            toggleMic(true);
+            broadcastEvent({type: 'mute_all'});
+        } else if (cmd === 'cam_off_all') {
+            toggleCam(true);
+            broadcastEvent({type: 'cam_off_all'});
+        } else if (cmd === 'theme_dark') {
+            applyTheme('dark');
+            broadcastEvent({type: 'theme_dark'});
+        } else if (cmd === 'theme_light') {
+            applyTheme('light');
+            broadcastEvent({type: 'theme_light'});
+        } else if (cmd === 'auto_mute') {
+            autoMute = !autoMute;
+            broadcastEvent({type: 'set_auto_mute', enabled: autoMute});
+            document.getElementById('auto-mute-btn').innerText = autoMute ? 'Авто-выкл микрофон' : 'Авто-вкл микрофон';
+            document.getElementById('auto-mute-btn').style.background = autoMute ? 'var(--danger)' : 'var(--success)';
+        }
+    }
+
+    function updateAdminButtons() {
+        const lockBtn = document.getElementById('lock-btn');
+        lockBtn.style.background = isLocked ? 'var(--danger)' : 'var(--success)';
+        lockBtn.innerText = isLocked ? 'Открыть комнату' : 'Закрыть комнату';
+
+        const autoMuteBtn = document.getElementById('auto-mute-btn');
+        autoMuteBtn.style.background = autoMute ? 'var(--danger)' : 'var(--success)';
+        autoMuteBtn.innerText = autoMute ? 'Авто-выкл микрофон' : 'Авто-вкл микрофон';
+    }
+
+    function applyTheme(theme) {
+        if (theme === 'dark') document.body.style.background = '#0b0e14';
+        else if (theme === 'light') document.body.style.background = '#ffffff';
+    }
+
+    function broadcastEvent(data, targetId = null) {
+        Object.values(peer.connections).forEach(conns => {
+            if (!targetId || conns[0].peer === targetId) conns[0].send(data);
+        });
+    }
+    
+    function syncFilter(type, val) {
+        const v = document.getElementById('localVideo');
+        let filter = '';
+        if (type === 'brightness') filter = `brightness(${val}%)`;
+        if (type === 'contrast') filter = `contrast(${val}%)`;
+        if (type === 'saturate') filter = `saturate(${val}%)`;
+        if (type === 'invert') filter = `invert(${val}%)`;
+        if (type === 'grayscale') filter = `grayscale(${val}%)`;
+        v.style.filter = filter;
+        broadcastEvent({type: 'f-sync', b: document.getElementById('bright-slider').value, c: document.getElementById('contrast-slider').value, s: document.getElementById('saturation-slider').value, i: document.getElementById('invert-slider').value, g: document.getElementById('grayscale-slider').value});
+        checkResetButtons();
+    }
+
+    function checkResetButtons() {
+        const bright = document.getElementById('bright-slider');
+        const contrast = document.getElementById('contrast-slider');
+        const saturation = document.getElementById('saturation-slider');
+        const invert = document.getElementById('invert-slider');
+        const grayscale = document.getElementById('grayscale-slider');
+        document.getElementById('reset-bright').style.display = bright.value != 100 ? 'inline' : 'none';
+        document.getElementById('reset-contrast').style.display = contrast.value != 100 ? 'inline' : 'none';
+        document.getElementById('reset-saturation').style.display = saturation.value != 100 ? 'inline' : 'none';
+        document.getElementById('reset-invert').style.display = invert.value != 0 ? 'inline' : 'none';
+        document.getElementById('reset-grayscale').style.display = grayscale.value != 0 ? 'inline' : 'none';
+    }
+
+    function resetSlider(type) {
+        const slider = document.getElementById(type === 'brightness' ? 'bright-slider' : 
+            type === 'contrast' ? 'contrast-slider' : 
+            type === 'saturate' ? 'saturation-slider' : 
+            type === 'invert' ? 'invert-slider' : 'grayscale-slider');
+        slider.value = type === 'invert' || type === 'grayscale' ? 0 : 100;
+        syncFilter(type, slider.value);
+    }
+
+    function togglePin(id) { document.getElementById(id).classList.toggle('pinned'); }
+    function toggleModal(id) { 
+        const m = document.getElementById(id);
+        m.style.display = m.style.display === 'block' ? 'none' : 'block'; 
+        if(id === 'users-modal') updateUserList();
+        if(id === 'admin-panel') updateAdminButtons();
+        if(id === 'friends-modal') renderFriendsList();
+    }
+
+    function toggleAdminPanel() {
+        if (myRole !== 'owner' && myRole !== 'admin') return;
+        const p = document.getElementById('admin-panel');
+        p.style.display = p.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function setUsername() {
+        const username = document.getElementById('username-input').value;
+        if (!/^[a-zA-Z][a-zA-Z0-9_]{3,}$/.test(username)) return alert('Юзернейм должен начинаться с буквы, содержать буквы/цифры/_, минимум 4 символа');
+        if (usernameRegistry[username]) return alert('Юзернейм занят');
+        usernameRegistry[username] = true;
+        myUsername = username;
+        localStorage.setItem('u_v6', myUsername);
+        checkOwnerStatus();
+        toggleModal('profile-modal');
+    }
+
+    function addFriend() {
+        const friendUser = document.getElementById('add-friend').value.trim();
+        if (!friendUser || !friendUser.startsWith('@')) return alert('Введите @username');
+        const clean = friendUser.slice(1);
+        if (friends.some(f => f.username === clean)) return alert('Уже в друзьях');
+        friends.push({username: clean, online: true});
+        localStorage.setItem('f_v6', JSON.stringify(friends));
+        renderFriendsList();
+        document.getElementById('add-friend').value = '';
+    }
+
+    function renderFriendsList() {
+        const list = document.getElementById('friends-list');
+        list.innerHTML = friends.map(f => `
+            <div class="friend-row">
+                <span>@${f.username} <span style="color:green">Онлайн</span></span>
+                <button class="btn-main" style="width:auto; background:var(--primary)" onclick="alert('Звонок @${f.username} (симуляция)')">Позвонить</button>
+            </div>
+        `).join('');
+    }
+
+    function changeRoomId() {
+        const newId = document.getElementById('new-room-id').value.trim();
+        if (newId.length !== 4) return alert('4 цифры!');
+        broadcastEvent({type: 'new_room_id', id: newId});
+        document.getElementById('room-code').innerText = 'Код: ' + newId;
+        localStorage.setItem('r_v6', newId);
+        location.reload();
+    }
+
+    function toggleRainbow(force) {
+        const video = document.getElementById('localVideo');
+        if (force || rainbowInterval === null) {
+            if (rainbowInterval) clearInterval(rainbowInterval);
+            rainbowInterval = setInterval(() => {
+                video.style.filter = `hue-rotate(${Math.random()*360}deg) saturate(1.8)`;
+                broadcastEvent({type: 'rainbow'});
+            }, 800 / rainbowSpeed);
+        } else {
+            clearInterval(rainbowInterval);
+            rainbowInterval = null;
+            video.style.filter = '';
+        }
+    }
+    function setRainbowSpeed(val) {
+        rainbowSpeed = parseInt(val);
+        if (rainbowInterval) toggleRainbow(true);
+    }
+
+    function toggleFlipCamera(force) {
+        isFlipped = force !== undefined ? force : !isFlipped;
+        const transform = isFlipped ? 'scaleX(-1) rotate(180deg)' : (isMirrored ? 'scaleX(1)' : 'scaleX(-1)');
+        document.getElementById('localVideo').style.transform = transform;
+        broadcastEvent({type: 'flip'});
+    }
+
+    function toggleMirrorCamera(force) {
+        isMirrored = force !== undefined ? force : !isMirrored;
+        const transform = isMirrored ? 'scaleX(1)' : (isFlipped ? 'scaleX(-1) rotate(180deg)' : 'scaleX(-1)');
+        document.getElementById('localVideo').style.transform = transform;
+        broadcastEvent({type: 'mirror'});
+    }
+
+    function togglePixelMode(force) {
+        isPixel = force !== undefined ? force : !isPixel;
+        document.getElementById('localVideo').style.imageRendering = isPixel ? 'pixelated' : 'auto';
+        broadcastEvent({type: 'pixel'});
+    }
+
+    function toggleCinemaMode(force) {
+        isCinema = force !== undefined ? force : !isCinema;
+        document.body.style.filter = isCinema ? 'brightness(0.25)' : '';
+        broadcastEvent({type: 'cinema'});
+    }
+
+    function toggleModal(id) { 
+        const m = document.getElementById(id);
+        m.style.display = m.style.display === 'block' ? 'none' : 'block'; 
+        if(id === 'users-modal') updateUserList();
+        if(id === 'admin-panel') updateAdminButtons();
+        if(id === 'friends-modal') renderFriendsList();
+    }
+
+    function uploadSound(inp) {
+        const file = inp.files[0];
+        const r = new FileReader();
+        r.onload = () => {
+            mySounds.push({name: file.name, data: r.result});
+            localStorage.setItem('sounds_v6', JSON.stringify(mySounds));
+            renderSoundList();
+        };
+        r.readAsDataURL(file);
+    }
+
+    function renderSoundList() {
+        const list = document.getElementById('sound-list');
+        list.innerHTML = mySounds.map((s, i) => `
+            <div class="sound-item">
+                <span>${s.name}</span>
+                <div>
+                    <button onclick="playSound(${i})">▶️</button>
+                    <button onclick="stopSound()">⏹️</button>
+                    <button onclick="deleteSound(${i})">✕</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function playSound(i) {
+        if (currentAudio) currentAudio.pause();
+        currentAudio = new Audio(mySounds[i].data);
+        currentAudio.play();
+        broadcastEvent({type: 'play_sound', index: i});
+    }
+    function stopSound() {
+        if (currentAudio) currentAudio.pause();
+        broadcastEvent({type: 'stop_sound'});
+    }
+    function deleteSound(i) {
+        mySounds.splice(i, 1);
+        localStorage.setItem('sounds_v6', JSON.stringify(mySounds));
+        renderSoundList();
+    }
+
+    function playRemoteSound(index) {
+        if (currentAudio) currentAudio.pause();
+        currentAudio = new Audio(mySounds[index].data);
+        currentAudio.play();
+    }
+    function stopRemoteSound() {
+        if (currentAudio) currentAudio.pause();
+    }
+
+    function applyRemoteBorder(style) {
+        document.querySelectorAll('.avatar-placeholder img, #my-top-avatar, #my-login-avatar, #my-stat-img').forEach(img => {
+            if (style === 'none') img.style.border = 'none';
+            else if (style === 'rainbow') img.style.border = '4px solid';
+            else img.style.border = `4px ${style}`;
+        });
+    }
+
+    function broadcastEvent(data, targetId = null) {
+        Object.values(peer.connections).forEach(conns => {
+            if (!targetId || conns[0].peer === targetId) conns[0].send(data);
+        });
+    }
+</script>
+</body>
+</html>
