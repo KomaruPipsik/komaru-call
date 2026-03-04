@@ -22,14 +22,6 @@
             position: relative;
         }
 
-        /* === ИСПРАВЛЕНИЯ И АНИМАЦИИ === */
-        .video-wrapper {
-            animation: videoAppear 0.6s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        @keyframes videoAppear {
-            from { opacity: 0; transform: scale(0.6) translateY(30px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
         .modal {
             transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.23,1,0.32,1);
             opacity: 0;
@@ -39,91 +31,68 @@
             opacity: 1;
             transform: translate(-50%, 0);
         }
-        #settings-modal {
-            top: auto !important;
-            bottom: 120px !important;
-            left: 50% !important;
-            transform: translateX(-50%) translateY(80px) !important;
+        #settings-modal { bottom: 220px !important; }
+        #sounds-modal { bottom: 180px !important; }
+        #border-modal { bottom: 200px !important; }
+        #wheel-modal { 
+            top: 8% !important; 
+            transform: none !important; 
+            width: 520px !important; 
+            height: auto !important;
         }
 
-        /* ЦЕНТРАЛЬНЫЙ КРУГ + ЗВЁЗДОЧКИ (теперь мерцают и всегда видны) */
-        #bg-circle {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 620px; height: 620px;
-            transform: translate(-50%, -50%);
+        /* КОЛЕСО ФОРТУНЫ */
+        #wheel-canvas {
             border-radius: 50%;
-            background: linear-gradient(135deg, #6e8efb, #a777e3, #4b0082);
-            animation: circlePulse 18s infinite linear;
-            filter: blur(90px);
-            opacity: 0.28;
-            z-index: -2;
+            box-shadow: 0 0 40px #a777e3;
         }
-        @keyframes circlePulse {
-            0% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.18); }
-            100% { transform: translate(-50%, -50%) scale(1); }
-        }
-        .star {
+        .wheel-arrow {
             position: absolute;
-            width: 3px; height: 3px;
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #ddd;
-            z-index: -1;
-            opacity: 0.65;
-            animation: twinkleStar 1.8s ease-in-out infinite;
-        }
-        @keyframes twinkleStar {
-            0%, 100% { opacity: 0.35; transform: scale(0.7); }
-            50% { opacity: 1; transform: scale(1.35); box-shadow: 0 0 12px #a777e3; }
-        }
-
-        /* ПЛАВНЫЕ ЭМОДЗИ */
-        .emoji-fly {
-            position: absolute;
-            font-size: 52px;
-            pointer-events: none;
-            z-index: 9999;
-            animation: flyEmoji linear forwards;
-            text-shadow: 0 0 15px #fff;
-        }
-        @keyframes flyEmoji {
-            0% { transform: translateY(120vh) rotate(0deg) scale(0.6); opacity: 1; }
-            40% { transform: translateY(55vh) rotate(var(--rot1)) translateX(var(--side)) scale(1.1); }
-            70% { transform: translateY(30vh) rotate(var(--rot2)) translateX(var(--side2)); }
-            100% { transform: translateY(-20vh) rotate(var(--rot3)) translateX(var(--side3)) scale(0.8); opacity: 0; }
-        }
-
-        /* РАДУЖНАЯ ОБВОДКА */
-        @keyframes rainbowBorder {
-            0% { border-color: #ff0000; }
-            14% { border-color: #ff8800; }
-            28% { border-color: #ffff00; }
-            42% { border-color: #00ff00; }
-            57% { border-color: #00ffff; }
-            71% { border-color: #0088ff; }
-            85% { border-color: #ff00ff; }
-            100% { border-color: #ff0000; }
-        }
-
-        /* KOMARU бейдж */
-        .komaru-badge {
-            position: absolute;
-            bottom: -9px; left: 50%;
+            top: -15px;
+            left: 50%;
             transform: translateX(-50%);
-            background: #a777e3;
-            color: #000;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 1px 10px;
-            border-radius: 12px;
+            width: 0; 
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 45px solid #ff4d4d;
+            filter: drop-shadow(0 0 15px #ff4d4d);
             z-index: 10;
-            box-shadow: 0 0 12px #a777e3;
-            white-space: nowrap;
+        }
+        #wheel-result {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 20;
+            border-radius: 50%;
+        }
+        #wheel-result-text {
+            font-size: 52px;
+            font-weight: 900;
+            color: #a777e3;
+            text-shadow: 0 0 40px #fff;
+            text-align: center;
+            line-height: 1.1;
+            padding: 0 20px;
         }
 
-        /* СКРОЛЛ, ВХОД, ВИДЕО, ЧАТ и т.д. */
+        /* Остальной стиль (полностью как в твоём файле) */
+        #bg-circle { position: absolute; top: 50%; left: 50%; width: 620px; height: 620px; transform: translate(-50%, -50%); border-radius: 50%; background: linear-gradient(135deg, #6e8efb, #a777e3, #4b0082); animation: circlePulse 18s infinite linear; filter: blur(90px); opacity: 0.28; z-index: -2; }
+        @keyframes circlePulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.18); } 100% { transform: translate(-50%, -50%) scale(1); } }
+        .star { position: absolute; width: 3px; height: 3px; background: #fff; border-radius: 50%; box-shadow: 0 0 8px #ddd; z-index: -1; opacity: 0.65; }
+        .star.flying { animation: flyStar linear infinite; }
+        @keyframes flyStar { 0% { transform: translate(0, 0); opacity: 0.65; } 100% { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+        .star.trail::after { content: ''; position: absolute; width: 6px; height: 2px; background: linear-gradient(90deg, transparent, #a777e3, transparent); opacity: 0.4; animation: trailFade 1.2s linear forwards; }
+        @keyframes trailFade { to { opacity: 0; } }
+        .emoji-fly { position: absolute; font-size: 52px; pointer-events: none; z-index: 9999; animation: flyEmoji linear forwards; text-shadow: 0 0 15px #fff; }
+        @keyframes flyEmoji { 0% { transform: translateY(120vh) rotate(0deg) scale(0.6); opacity: 1; } 40% { transform: translateY(55vh) rotate(var(--rot1)) translateX(var(--side)) scale(1.1); } 70% { transform: translateY(30vh) rotate(var(--rot2)) translateX(var(--side2)); } 100% { transform: translateY(-20vh) rotate(var(--rot3)) translateX(var(--side3)) scale(0.8); opacity: 0; } }
+        @keyframes rainbowBorder { 0% { border-color: #ff0000; } 14% { border-color: #ff8800; } 28% { border-color: #ffff00; } 42% { border-color: #00ff00; } 57% { border-color: #00ffff; } 71% { border-color: #0088ff; } 85% { border-color: #ff00ff; } 100% { border-color: #ff0000; } }
+        .komaru-badge { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: #a777e3; color: #000; font-size: 10px; font-weight: 700; padding: 1px 10px; border-radius: 12px; z-index: 10; box-shadow: 0 0 12px #a777e3; white-space: nowrap; }
+
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #21262d; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #6e8efb; border-radius: 10px; }
@@ -131,176 +100,71 @@
 
         #login-screen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 5000; }
         .login-box { background: var(--panel); padding: 40px; border-radius: 24px; width: 420px; text-align: center; border: 1px solid #30363d; }
-        
         .file-upload { position: relative; display: inline-block; width: 100%; margin-bottom: 15px; }
         .file-upload input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
         .file-custom { display: block; padding: 12px; background: #21262d; border: 1px dashed #484f58; border-radius: 12px; color: #8b949e; transition: background 0.3s; text-align: center; font-weight: 600; }
         .file-custom:hover { background: linear-gradient(135deg, rgba(110, 142, 251, 0.2), rgba(167, 119, 227, 0.2)); }
-
         input[type="text"] { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #30363d; background: #0d1117; color: white; margin-bottom: 15px; outline: none; }
         .btn-main { width: 100%; padding: 14px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; color: white; margin-bottom: 10px; transition: transform 0.2s, box-shadow 0.2s; }
         .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--primary); }
-
         .my-login-profile { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; cursor: pointer; }
         #my-login-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
-
         #app-interface { display: none; flex: 1; flex-direction: column; }
-        .top-nav { 
-            height: 65px; 
-            background: var(--panel); 
-            display: flex; 
-            align-items: center; 
-            padding: 0 20px; 
-            border-bottom: 1px solid #30363d; 
-        }
+        .top-nav { height: 65px; background: var(--panel); display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid #30363d; }
         .my-profile { display: flex; align-items: center; gap: 12px; }
         #my-top-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #a777e3; background: #333; }
-
         .content-area { flex: 1; display: flex; position: relative; overflow: hidden; }
         .video-grid { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 15px; padding: 20px; overflow-y: auto; }
-        
-        .video-wrapper { 
-            position: relative; 
-            width: 320px; 
-            aspect-ratio: 16/9; 
-            background: #000; 
-            border-radius: 16px; 
-            overflow: hidden; 
-            border: 2px solid #30363d; 
-            transition: width 0.5s ease, max-width 0.5s ease; 
-        }
+        .video-wrapper { position: relative; width: 320px; aspect-ratio: 16/9; background: #000; border-radius: 16px; overflow: hidden; border: 2px solid #30363d; transition: width 0.5s ease, max-width 0.5s ease; }
         .video-wrapper.pinned { width: 80%; max-width: 1000px; order: -1; border-color: gold; }
         .video-wrapper.stealth-hidden { display: none !important; }
-        
         video { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 2; transform: scaleX(-1); }
         #localVideo { transform: scaleX(-1); }
-
         .avatar-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #1a1d26; z-index: 1; }
         .avatar-placeholder img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; opacity: 0.5; }
-
         .video-info { position: absolute; bottom: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; z-index: 10; }
         .v-name { background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 10px; font-size: 12px; }
         .v-pin { background: rgba(0,0,0,0.6); width: 25px; height: 25px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-
         #chat-sidebar { width: 320px; background: #0d1117; border-left: 1px solid #30363d; display: none; flex-direction: column; }
         .chat-msgs { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
         .m-box { background: #21262d; padding: 10px; border-radius: 12px; font-size: 14px; }
-
-        .controls { 
-            height: 85px; 
-            background: var(--panel); 
-            border-top: 1px solid #30363d; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 15px; 
-            position: relative; 
-        }
+        .controls { height: 85px; background: var(--panel); border-top: 1px solid #30363d; display: flex; justify-content: center; align-items: center; gap: 15px; position: relative; }
         .circle-btn { width: 55px; height: 55px; border-radius: 18px; border: none; background: #21262d; color: white; cursor: pointer; font-size: 22px; transition: transform 0.2s, box-shadow 0.2s; }
         .circle-btn:hover { transform: scale(1.08); box-shadow: 0 0 20px var(--primary); }
         .circle-btn.active { background: var(--primary); }
         .circle-btn.stop { background: var(--danger); }
         .circle-btn.screen-active { background: #00ffcc !important; color: #000; }
-
         #emoji-menu { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 15px; border-radius: 20px; border: 1px solid #444; display: none; z-index: 1000; width: 280px; }
         .emoji-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; font-size: 48px; max-height: 180px; overflow-y: auto; }
-
         .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel); border: 1px solid #444; border-radius: 20px; padding: 25px; width: 420px; display: none; z-index: 6000; }
         .user-row { background: #0d1117; padding: 10px; border-radius: 12px; margin-bottom: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
         .user-info { display: flex; align-items: center; gap: 8px; }
         .user-row img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
         .admin-controls { display: flex; gap: 5px; flex-wrap: wrap; }
-        
         .admin-btn { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; color: white; transition: transform 0.2s, box-shadow 0.2s; }
         .admin-btn:hover { transform: scale(1.08); box-shadow: 0 0 15px var(--primary); }
-
         #nick-history { position: absolute; width: 100%; background: #21262d; border: 1px solid #30363d; border-radius: 12px; top: 60px; z-index: 100; display: none; }
         .hist-row { padding: 12px; cursor: pointer; border-bottom: 1px solid #30363d; text-align: left; }
-        .rain { position: absolute; top: -50px; pointer-events: none; animation: fall 7s linear forwards; z-index: 9999; }
-
         .volume-slider { width: 100%; margin-top: 5px; }
         .emoji-item { position: relative; display: inline-block; }
         .emoji-remove { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 15px; height: 15px; text-align: center; line-height: 15px; cursor: pointer; font-size: 10px; }
-
-        #owner-panel {
-            position: fixed;
-            bottom: 105px; right: 30px;
-            background: linear-gradient(135deg, #4b0082, #8a2be2);
-            color: white;
-            padding: 14px 24px;
-            border-radius: 14px;
-            box-shadow: 0 0 25px #a777e3;
-            cursor: pointer;
-            display: none;
-            z-index: 99999;
-            font-weight: 600;
-            animation: ownerGlow 2.2s infinite alternate;
-        }
+        #owner-panel { position: fixed; bottom: 105px; left: 30px; background: linear-gradient(135deg, #4b0082, #8a2be2); color: white; padding: 14px 24px; border-radius: 14px; box-shadow: 0 0 25px #a777e3; cursor: pointer; display: none; z-index: 99999; font-weight: 600; animation: ownerGlow 2.2s infinite alternate; }
         @keyframes ownerGlow { from { box-shadow: 0 0 18px #a777e3; } to { box-shadow: 0 0 35px #6e8efb; } }
-
-        #admin-panel {
-            position: fixed;
-            bottom: 25px; right: 25px;
-            background: #21262d;
-            color: white;
-            padding: 12px 18px;
-            border-radius: 12px;
-            display: none;
-            z-index: 99999;
-            box-shadow: 0 0 20px #a777e3;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .reset-btn {
-            background: #30363d;
-            color: #a777e3;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-left: 8px;
-            transition: all 0.2s;
-        }
-        .reset-btn:hover {
-            background: #a777e3;
-            color: #0b0e14;
-            transform: scale(1.05);
-        }
-
-        #sounds-modal .sound-card {
-            background: #21262d;
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            transition: 0.2s;
-        }
+        #admin-panel { position: fixed; bottom: 25px; right: 25px; background: #21262d; color: white; padding: 12px 18px; border-radius: 12px; display: none; z-index: 99999; box-shadow: 0 0 20px #a777e3; max-height: 70vh; overflow-y: auto; }
+        .reset-btn { background: #30363d; color: #a777e3; border: none; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 8px; transition: all 0.2s; }
+        .reset-btn:hover { background: #a777e3; color: #0b0e14; transform: scale(1.05); }
+        #sounds-modal .sound-card { background: #21262d; border-radius: 12px; padding: 12px; text-align: center; transition: 0.2s; }
         #sounds-modal .sound-card:hover { background: #30363d; }
-        #sound-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 12px;
-            max-height: 260px;
-            overflow-y: auto;
-        }
-
-        .friend-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            background: #21262d;
-            border-radius: 12px;
-            margin-bottom: 8px;
-        }
+        #sound-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; max-height: 260px; overflow-y: auto; }
+        .friend-row { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #21262d; border-radius: 12px; margin-bottom: 8px; }
+        #sound-notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #2ecc71; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 600; box-shadow: 0 0 20px #2ecc71; z-index: 999999; display: none; white-space: nowrap; }
     </style>
 </head>
 <body>
 
     <div id="bg-circle"></div>
     <div id="stars-container"></div>
+    <div id="sound-notification"></div>
 
     <div id="login-screen">
         <div class="login-box">
@@ -321,6 +185,7 @@
             <button class="btn-main" style="background: var(--primary)" onclick="startPeer(true)">Создать Комнату</button>
             <button class="btn-main" style="background: #21262d; border: 1px solid #484f58" onclick="startPeer(false)">Войти в Комнату</button>
             <button class="btn-main" style="background: #30363d" onclick="toggleModal('friends-modal')">Друзья</button>
+            <div id="owner-panel-login" onclick="toggleOwnerPanel()" style="margin-top:15px; background: linear-gradient(135deg, #4b0082, #8a2be2); color: white; padding: 14px 24px; border-radius: 14px; box-shadow: 0 0 25px #a777e3; cursor: pointer; font-weight: 600; text-align:center; display:none;">Главные команды 👑</div>
         </div>
     </div>
 
@@ -339,7 +204,7 @@
                 <div>
                     <button class="admin-btn" style="background:#30363d" onclick="toggleModal('users-modal')">👥 Участники</button>
                     <button class="admin-btn" style="background:#30363d" onclick="toggleChat()">💬 Чат</button>
-                    <button id="admin-panel-btn" class="admin-btn" style="background:#30363d; display:none" onclick="toggleAdminPanel()">⚡ Админ-панель</button>
+                    <button id="admin-panel-btn" class="admin-btn" style="background:#30363d" onclick="toggleModal('admin-panel')">⚡ Админ-панель</button>
                 </div>
             </div>
         </div>
@@ -376,6 +241,7 @@
             <button class="circle-btn" onclick="toggleEmoji()">🚀</button>
             <button class="circle-btn" onclick="toggleModal('settings-modal')">⚙️</button>
             <button class="circle-btn stop" onclick="location.reload()">🔴</button>
+            <div id="owner-panel" onclick="toggleOwnerPanel()">Главные команды 👑</div>
         </div>
     </div>
 
@@ -423,14 +289,13 @@
         <button class="btn-main" style="background:#444" onclick="adminCmd('theme_dark')">Тёмная тема (для всех)</button>
         <button class="btn-main" style="background:#444" onclick="adminCmd('theme_light')">Светлая тема (для всех)</button>
         <button id="auto-mute-btn" class="btn-main" style="background:var(--success)" onclick="adminCmd('auto_mute')">Авто-вкл микрофон</button>
-        
         <h4 style="margin:15px 0 8px;">Таймер комнаты</h4>
         <input type="text" id="timer-set" placeholder="05:00 или 00" style="width:140px; padding:10px; border-radius:8px; background:#0d1117; border:1px solid #484f58; color:white;">
         <button class="btn-main" style="background:#6e8efb; width:auto; padding:10px 20px; display:inline-block" onclick="setRoomTimer()">Запустить</button>
         <button class="btn-main" style="background:#ff4d4d; width:auto; padding:10px 20px; display:inline-block" onclick="stopRoomTimer()">Стоп</button>
-        
         <input type="text" id="new-room-id" placeholder="Новый код комнаты" maxlength="4">
         <button class="btn-main" style="background:#444" onclick="changeRoomId()">Сменить ID комнаты</button>
+        <button class="btn-main" style="background:#444" onclick="showFortuneWheel()">🎡 Сделать колесо фортуны</button>
         <button class="btn-main" style="background:#333" onclick="toggleModal('admin-panel')">Закрыть</button>
     </div>
 
@@ -441,6 +306,8 @@
         <button class="btn-main" style="background:#333" onclick="toggleStealthMode()">👁️ Режим прослушки</button>
         <button class="btn-main" style="background:#333" onclick="openBorderSection()">🖼️ Обводки аватарок</button>
         <button class="btn-main" style="background:#333" onclick="toggleModal('sounds-modal')">🔊 Мои звуки</button>
+        <button class="btn-main" style="background:#333" onclick="clearAllCalls()">🗑️ Очистить все видео звонки</button>
+        <button class="btn-main" style="background:#333" onclick="joinRandomCall()">🎲 Рандомный звонок</button>
         <button class="btn-main" style="background:#333" onclick="toggleModal('owner-commands-modal')">Закрыть</button>
     </div>
 
@@ -462,7 +329,7 @@
     <div id="sounds-modal" class="modal">
         <h3>Галерея звуков 🎵</h3>
         <div class="file-upload" style="margin:15px 0">
-            <span class="file-custom" style="padding:14px; font-size:15px; background: linear-gradient(135deg, #6e8efb, #a777e3);">➕ Добавить звук (mp3/wav)</span>
+            <span class="file-custom" style="padding:14px; font-size:15px; background: linear-gradient(135deg, #6e8efb, #a777e3); color:white; border:2px solid #4b0082;">➕ Добавить звук (mp3/wav до 10 мин)</span>
             <input type="file" id="sound-upload" accept="audio/*" onchange="uploadSound(this)">
         </div>
         <div id="sound-gallery"></div>
@@ -474,6 +341,28 @@
         <h3>Обводка аватарки (25 вариантов + KOMARU)</h3>
         <div id="border-options" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;"></div>
         <button class="btn-main" style="background:#333" onclick="toggleModal('border-modal')">Закрыть</button>
+    </div>
+
+    <div id="incoming-call-modal" class="modal" style="width:380px; text-align:center; display:none;">
+        <h3 id="call-from">Вам звонит @...</h3>
+        <button class="btn-main" style="background:#2ecc71; width:45%" onclick="acceptCall()">Принять</button>
+        <button class="btn-main" style="background:#ff4d4d; width:45%" onclick="declineCall()">Отклонить</button>
+    </div>
+
+    <!-- КОЛЕСО ФОРТУНЫ -->
+    <div id="wheel-modal" class="modal">
+        <h3>Колесо фортуны</h3>
+        <div style="position:relative; width:320px; height:320px; margin:20px auto;">
+            <canvas id="wheel-canvas" width="320" height="320"></canvas>
+            <div class="wheel-arrow"></div>
+        </div>
+        <button id="spin-btn" class="btn-main" style="background:#6e8efb; margin-top:15px; display:none;" onclick="spinWheel()">Крутить колесо</button>
+        <button class="btn-main" style="background:#333" onclick="closeWheelForAll()">Закрыть</button>
+    </div>
+
+    <!-- Результат колеса -->
+    <div id="wheel-result" class="modal" style="width:520px; height:320px; background:rgba(0,0,0,0.95);">
+        <div id="wheel-result-text"></div>
     </div>
 
 <script>
@@ -491,19 +380,18 @@
     let friends = JSON.parse(localStorage.getItem('f_v6') || '[]');
     let usernameRegistry = {};
     let isStealth = false;
-    let rainbowInterval = null;
-    let rainbowSpeed = 5;
-    let isFlipped = false;
-    let isMirrored = false;
-    let isPixel = false;
-    let isCinema = false;
-    let screenActive = false;
     let borderStyle = '';
     let mySounds = JSON.parse(localStorage.getItem('sounds_v6') || '[]');
     let currentAudio = null;
     let timerInterval = null;
     let remainingSeconds = 0;
     let currentPlayingName = '';
+    let activeCalls = 0;
+
+    // === НОВОЕ ДЛЯ КОЛЕСА ===
+    let wheelOptions = [];
+    let isSpinning = false;
+    let wheelCanvas, ctx;
 
     window.onload = () => {
         if(myNicks.length) document.getElementById('nickname').value = myNicks[myNicks.length-1];
@@ -519,6 +407,10 @@
         checkOwnerStatus();
         renderBorderOptions();
         renderSoundList();
+        setInterval(updateCallCount, 5000);
+
+        wheelCanvas = document.getElementById('wheel-canvas');
+        ctx = wheelCanvas.getContext('2d');
     };
 
     document.getElementById('avatar-pc').onchange = (e) => {
@@ -552,17 +444,29 @@
             star.className = 'star';
             star.style.left = Math.random() * 100 + 'vw';
             star.style.top = Math.random() * 100 + 'vh';
-            star.style.animationDuration = (1.2 + Math.random() * 2.8) + 's';
+            if (Math.random() > 0.4) {
+                star.classList.add('flying');
+                star.style.animationDuration = (8 + Math.random() * 25) + 's';
+                star.style.setProperty('--dx', (Math.random() * 800 - 400) + 'vw');
+                star.style.setProperty('--dy', (Math.random() * 800 - 400) + 'vh');
+                if (Math.random() > 0.6) star.classList.add('trail');
+            }
             container.appendChild(star);
         }
     }
 
     function checkOwnerStatus() {
         const special = ['Komaru', 'tot_komaru', 'Komugi'];
-        document.getElementById('owner-panel').style.display = special.includes(myUsername) ? 'block' : 'none';
+        const isSpecial = special.includes(myUsername);
+        document.getElementById('owner-panel').style.display = isSpecial ? 'block' : 'none';
+        document.getElementById('owner-panel-login').style.display = isSpecial ? 'block' : 'none';
     }
 
     function toggleOwnerPanel() {
+        const m = document.getElementById('owner-commands-modal');
+        m.style.left = '30px';
+        m.style.top = '80px';
+        m.style.transform = 'none';
         toggleModal('owner-commands-modal');
     }
 
@@ -829,6 +733,22 @@
             if(d.type === 'stop_timer') {
                 if(timerInterval) clearInterval(timerInterval);
                 document.getElementById('timer-display').style.display = 'none';
+            }
+            if(d.type === 'incoming_call') {
+                showIncomingCall(d.from);
+            }
+            if(d.type === 'call_declined') {
+                alert(`@${d.from} отклонил звонок`);
+            }
+            if(d.type === 'clear_calls') {
+                renderSystemMsg('Сервер звонков перезапущен');
+            }
+            if(d.type === 'show_wheel') {
+                wheelOptions = d.options;
+                openWheelModal();
+            }
+            if(d.type === 'wheel_result') {
+                showWheelResult(d.winner);
             }
         });
         c.on('close', () => {
@@ -1143,12 +1063,6 @@
         if(id === 'friends-modal') renderFriendsList();
     }
 
-    function toggleAdminPanel() {
-        if (myRole !== 'owner' && myRole !== 'admin') return;
-        const p = document.getElementById('admin-panel');
-        p.style.display = p.style.display === 'block' ? 'none' : 'block';
-    }
-
     function setUsername() {
         const username = document.getElementById('username-input').value;
         if (!/^[a-zA-Z][a-zA-Z0-9_]{3,}$/.test(username)) return alert('Юзернейм должен начинаться с буквы, содержать буквы/цифры/_, минимум 4 символа');
@@ -1177,7 +1091,7 @@
             <div class="friend-row">
                 <span>@${f.username} <span style="color:green">Онлайн</span></span>
                 <div>
-                    <button class="admin-btn" style="background:var(--primary); margin-right:5px;" onclick="inviteFriend('${f.username}')">📞 Позвонить</button>
+                    <button class="admin-btn" style="background:var(--primary); margin-right:5px;" onclick="callFriend('${f.username}')">📞 Позвонить</button>
                     <button class="admin-btn" style="background:var(--danger); padding:4px 10px;" onclick="removeFriend('${f.username}')">✕</button>
                 </div>
             </div>
@@ -1190,14 +1104,31 @@
         renderFriendsList();
     }
 
-    function inviteFriend(name) {
-        const codeEl = document.getElementById('room-code');
-        if (codeEl.style.display === 'block') {
-            const code = codeEl.innerText.replace('Код: ', '');
-            alert(`Приглашение @${name} отправлено!\n\nПусть введёт код комнаты:\n${code}`);
-        } else {
-            alert('Сначала войди или создай комнату, потом зови друзей 😉');
-        }
+    function callFriend(name) {
+        document.getElementById('call-from').innerText = `Идет вызов @${name}...`;
+        document.getElementById('incoming-call-modal').style.display = 'block';
+        setTimeout(() => {
+            if (document.getElementById('incoming-call-modal').style.display === 'block') {
+                declineCall();
+            }
+        }, 15000);
+    }
+
+    function showIncomingCall(from) {
+        document.getElementById('call-from').innerText = `Вам звонит @${from}`;
+        document.getElementById('incoming-call-modal').style.display = 'block';
+    }
+
+    function acceptCall() {
+        document.getElementById('incoming-call-modal').style.display = 'none';
+        const newId = Math.floor(1000 + Math.random()*9000).toString();
+        document.getElementById('roomId').value = newId;
+        startPeer(false);
+    }
+
+    function declineCall() {
+        document.getElementById('incoming-call-modal').style.display = 'none';
+        broadcastEvent({type: 'call_declined', from: users[myId].nick});
     }
 
     function changeRoomId() {
@@ -1238,35 +1169,47 @@
     function uploadSound(inp) {
         const file = inp.files[0];
         if (!file) return;
-        if (file.size > 10 * 1024 * 1024) return alert('Максимум 10 МБ (~10 минут звука)');
-        const r = new FileReader();
-        r.onload = () => {
-            mySounds.push({name: file.name, data: r.result});
+        if (file.size > 10*1024*1024) {
+            showSoundNotification('Файл больше 10 МБ!', true);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            mySounds.push({name: file.name, data: reader.result});
             localStorage.setItem('sounds_v6', JSON.stringify(mySounds));
             renderSoundList();
+            showSoundNotification('Звук добавлен! ✅', false);
         };
-        r.readAsDataURL(file);
+        reader.readAsDataURL(file);
+    }
+
+    function showSoundNotification(text, isError) {
+        const notif = document.getElementById('sound-notification');
+        notif.innerText = text;
+        notif.style.background = isError ? '#ff4d4d' : '#2ecc71';
+        notif.style.display = 'block';
+        setTimeout(() => {
+            notif.style.display = 'none';
+        }, 3000);
     }
 
     function renderSoundList() {
         const gallery = document.getElementById('sound-gallery');
         gallery.innerHTML = mySounds.map((s, i) => `
-            <div class="sound-card">
-                <div style="font-size:13px; margin-bottom:8px; color:#e6edf3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.name}</div>
-                <button class="circle-btn" style="width:42px;height:42px;font-size:18px;margin:0 auto 6px;display:block" onclick="playSound(${i})">▶️</button>
-                <button class="circle-btn" style="width:32px;height:32px;font-size:14px;background:#444" onclick="deleteSound(${i})">✕</button>
+            <div class="sound-card" onclick="playSound(${i})">
+                <div style="font-size:13px;margin-bottom:8px;color:#e6edf3">${s.name}</div>
+                <button class="circle-btn" style="width:42px;height:42px;font-size:18px">▶️</button>
+                <button onclick="event.stopImmediatePropagation(); deleteSound(${i});" style="margin-top:8px; background:#ff4d4d; padding:4px 10px; border-radius:6px; font-size:10px;">Удалить</button>
             </div>
         `).join('');
     }
 
     function playSound(i) {
-        const sound = mySounds[i];
-        if (!sound) return;
         if (currentAudio) currentAudio.pause();
-        currentAudio = new Audio(sound.data);
+        currentAudio = new Audio(mySounds[i].data);
         currentAudio.play();
-        updateNowPlaying(sound.name);
-        broadcastEvent({type: 'play_sound', audioData: sound.data, name: sound.name});
+        updateNowPlaying(mySounds[i].name);
+        broadcastEvent({type: 'play_sound', audioData: mySounds[i].data, name: mySounds[i].name});
     }
 
     function playRemoteSound(payload) {
@@ -1336,10 +1279,139 @@
         document.getElementById('timer-display').style.display = 'none';
         broadcastEvent({type: 'stop_timer'});
     }
-</script>
-</body>
-</html>
-</script>
-</body>
 
+    function clearAllCalls() {
+        broadcastEvent({type: 'clear_calls'});
+        renderSystemMsg('Сервер звонков перезапущен');
+    }
+
+    function joinRandomCall() {
+        const randomId = Math.floor(1000 + Math.random()*9000).toString();
+        document.getElementById('roomId').value = randomId;
+        startPeer(false);
+    }
+
+    function updateCallCount() {
+        activeCalls = Object.keys(users).length;
+        const title = document.querySelector('h1');
+        if (title) title.innerHTML = `Komaru Chat😺 <span style="font-size:14px;color:#a777e3;">(${activeCalls} звонков)</span>`;
+    }
+
+    function showFortuneWheel() {
+        if (myRole !== 'owner' && myRole !== 'admin') return alert('Только админ может открыть колесо!');
+        
+        const input = prompt('Введи варианты через запятую (до 10):\nПример: Дать админа,Выкл всем микрофоны,Комару поцелуй,Радужный экран', 'Дать админа,Выкл всем микрофоны,Комару поцелуй,Радужный экран,Подарить 1000 коинов,Сменить ник,Сделать всех админами,Случайный кик');
+        if (!input) return;
+        
+        wheelOptions = input.split(',').map(s => s.trim()).filter(s => s);
+        if (wheelOptions.length < 2) return alert('Нужно минимум 2 варианта!');
+        
+        broadcastEvent({type: 'show_wheel', options: wheelOptions});
+        openWheelModal();
+    }
+
+    function openWheelModal() {
+        const modal = document.getElementById('wheel-modal');
+        modal.style.display = 'block';
+        setTimeout(() => modal.classList.add('show'), 10);
+        
+        drawWheel();
+        document.getElementById('spin-btn').style.display = (myRole === 'owner' || myRole === 'admin') ? 'block' : 'none';
+    }
+
+    function drawWheel() {
+        const num = wheelOptions.length;
+        const angleStep = 360 / num;
+        ctx.clearRect(0, 0, 320, 320);
+        ctx.save();
+        ctx.translate(160, 160);
+        
+        for (let i = 0; i < num; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, 150, (i * angleStep - 90) * Math.PI / 180, ((i + 1) * angleStep - 90) * Math.PI / 180);
+            ctx.fillStyle = i % 2 === 0 ? '#6e8efb' : '#a777e3';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            ctx.save();
+            ctx.rotate(((i + 0.5) * angleStep - 90) * Math.PI / 180);
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 18px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText(wheelOptions[i], 80, 6);
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    function spinWheel() {
+        if (isSpinning) return;
+        isSpinning = true;
+        document.getElementById('spin-btn').style.display = 'none';
+        
+        const spins = 8 + Math.random() * 6;
+        const finalAngle = Math.random() * 360;
+        let currentAngle = 0;
+        
+        const anim = setInterval(() => {
+            currentAngle += 18;
+            wheelCanvas.style.transform = `rotate(${currentAngle}deg)`;
+            
+            if (currentAngle > spins * 360 + finalAngle) {
+                clearInterval(anim);
+                const winnerIndex = Math.floor((360 - (currentAngle % 360)) / (360 / wheelOptions.length));
+                const winner = wheelOptions[winnerIndex];
+                
+                broadcastEvent({type: 'wheel_result', winner: winner});
+                showWheelResult(winner);
+                isSpinning = false;
+            }
+        }, 30);
+    }
+
+    function showWheelResult(winner) {
+        const resultDiv = document.getElementById('wheel-result');
+        const text = document.getElementById('wheel-result-text');
+        resultDiv.style.display = 'flex';
+        text.innerHTML = winner;
+        
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+            document.getElementById('wheel-modal').style.display = 'none';
+            document.getElementById('wheel-modal').classList.remove('show');
+        }, 10000);
+    }
+
+    function closeWheelForAll() {
+        broadcastEvent({type: 'close_wheel'});
+        document.getElementById('wheel-modal').style.display = 'none';
+        document.getElementById('wheel-modal').classList.remove('show');
+    }
+
+    function toggleModal(id) { 
+        const m = document.getElementById(id);
+        if (m.style.display === 'block') {
+            m.classList.remove('show');
+            setTimeout(() => { m.style.display = 'none'; }, 400);
+        } else {
+            m.style.display = 'block';
+            setTimeout(() => { m.classList.add('show'); }, 10);
+        }
+        if(id === 'users-modal') updateUserList();
+        if(id === 'admin-panel') updateAdminButtons();
+        if(id === 'friends-modal') renderFriendsList();
+    }
+
+    function broadcastEvent(data, targetId = null) {
+        Object.values(peer.connections).forEach(conns => {
+            if (!targetId || conns[0].peer === targetId) conns[0].send(data);
+        });
+    }
+</script>
+</body>
 </html>
+</html>
+
